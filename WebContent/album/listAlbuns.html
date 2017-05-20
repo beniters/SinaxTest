@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html ng-app="albumApp">
+<head>
+	<link rel="stylesheet" type="text/css" href="../css/style.css"/>
+	<script src="../js/angular.min.js"></script>
+	<script src="../js/angular-resource.min.js"></script>
+	<script src="../js/Util.js"></script>
+	<script src="../js/json2.js"></script>
+	<meta charset="UTF-8">
+</head>
+<body>
+
+<h1>.:: <b>Album</b> ::..</h1>
+
+<br/>
+
+<div class="message" ng-controller="alertMessagesController">
+    <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+
+<div class="grid" ng-controller="albumListController"> 
+    <table>
+    	<tr>
+    		<td colspan="5"></td>
+    	</tr>
+    </table>
+	<table>
+		<tr>
+			<th>#</th>
+			<th>Album</th>
+		</tr>
+		<tr ng-repeat="x in dados" ng-click="select(x.idAlbum)" class="line">
+			<td>{{ x.idAlbum }}</td>
+			<td>{{ x.nomeAlbum }}</td>
+			<td><a ng-click="deleteAlbum($event, x.idAlbum)" href="#"><img alt="Apagar" src="../img/ic_delete.png" width="10" height="10"/></a></td>
+		</tr>
+	</table>
+	
+</div>
+
+<div class="form" ng-controller="albumFormController">
+    <div ng-if="album.idAlbum == null">
+        <h3><a ng-click="novoCadastro()" href="#">Novo Album</a></h3>
+    </div>
+    <div ng-show="album.idAlbum != null">
+        <h3>Atualizar Album</h3>
+    </div>
+     <form name="albumForm" ng-submit="updateAlbum()" ng-show="album.idAlbum != null || novo" novalidate >
+
+         <div class="form-group" ng-class="{'has-error' : albumForm.nomeAlbum.$invalid && albumForm.nomeAlbum.$dirty}">
+             <label for="nomeAlbum">Título:</label>
+             <span ng-class="{'glyphicon glyphicon-ok' : albumForm.nomeAlbum.$valid && albumForm.nomeAlbum.$dirty}"></span>
+
+             <input id="nomeAlbum" name="nomeAlbum" type="text" class="form-control" maxlength="50"
+                    ng-model="album.nomeAlbum"
+                    required ng-minlength="2" ng-maxlength="50"/>
+
+             <p class="help-block" ng-show="albumForm.nomeAlbum.$error.required">O Título da album é obrigatório.</p>
+             <p class="help-block" ng-show="albumForm.nomeAlbum.$error.minlength">O Título da album deve ter pelo menos 2 caracteres.</p>
+             <p class="help-block" ng-show="albumForm.nomeAlbum.$error.maxlength">O Título da album não pode ultrapassar 50 caracteres.</p>
+         </div>
+
+         <div class="buttons">
+             <button type="button" class="btn btn-primary" ng-click="clearForm()">Limpar</button>
+             <button type="submit" class="btn btn-primary" ng-disabled="albumForm.$invalid">Salvar</button>
+         </div>
+     </form>
+</div>
+
+<script>
+var app = angular.module('albumApp', ['ngResource']);
+app.controller('albumListController', 
+	function($scope, $rootScope, $http) {
+		$scope.select = function (id) {
+			$rootScope.$broadcast('albumSelecionado', id);
+		};
+		
+		$scope.refreshGrid = function(){
+			var callBackSuccess = function(response){$scope.dados = response.data; console.log(response.data);};
+			Util.get($http, 'rest/album', null, callBackSuccess);
+		};
+		
+		$rootScope.$on("CallRefreshGrid", function(){
+				$scope.refreshGrid();
+			}
+		);
+		
+		$scope.refreshGrid();
+
+
+
+		$scope.clearForm = function () {
+	        $scope.album = null;
+//	         document.getElementById('imageUrl').value = null;
+	        $scope.albumForm.$setPristine();
+	        $rootScope.$broadcast('clear');
+	        $scope.novo = false;
+	    }
+	    
+	    $scope.deleteAlbum = function(ev, id){
+	    	var r = confirm("Confirma a Exclusão?");
+	    	if (r == true) {
+	    		var _callBackSuccess = function (response) {
+		            $rootScope.$broadcast('refreshGrid');
+		            $rootScope.$broadcast('albumApagada');
+		            $scope.clearForm();
+		        };
+		
+		        var _callBackError = function () {
+		            $rootScope.$broadcast('error');
+		        };
+		   		if(id != null){
+		           	Util.del($http, 'rest/album/delete/'+id, $scope.album, _callBackSuccess, _callBackError);
+		       	}
+	    	} 
+			
+	    }
+
+	}
+);
+
+app.controller('albumFormController', function ($scope, $rootScope, $http, $resource) {
+	$scope.novo = false;
+
+	$scope.novoCadastro = function(){
+		$scope.novo = true;
+	};
+	
+    $scope.clearForm = function () {
+        $scope.album = null;
+//         document.getElementById('imageUrl').value = null;
+        $scope.albumForm.$setPristine();
+        $rootScope.$broadcast('clear');
+        $scope.novo = false;
+    };
+
+    $scope.updateAlbum = function () {
+     	var _callBackSuccess = function (response) {
+             $rootScope.$broadcast('refreshGrid');
+             $scope.album = response.data;
+             $rootScope.$broadcast('albumSalvo');
+             $scope.clearForm();
+         };
+
+         var _callBackError = function () {
+             $rootScope.$broadcast('error');
+         };
+    	if($scope.album.idAlbum != null){
+            Util.put($http, 'rest/album', $scope.album, _callBackSuccess, _callBackError);
+        } 
+    	else{
+    		Util.post($http, 'rest/album', $scope.album, _callBackSuccess, _callBackError);
+        }
+    };
+
+    $scope.$on('albumSelecionado', function (event, id) {
+    	Util.get($http, 'rest/album/'+id, null, function(response){
+        											$scope.album = response.data; 
+        										 });
+    });
+
+    $scope.$on('deleteAlbum', function (event, id) {
+    	albumService.delete({id: id}).$promise.then(
+            function () {
+                $rootScope.$broadcast('refreshGrid');
+                $rootScope.$broadcast('albumDeletado');
+                $scope.clearForm();
+            },
+            function () {
+                $rootScope.$broadcast('error');
+            });
+    });
+});
+
+app.controller('alertMessagesController', function ($rootScope, $scope, $http) {
+    $scope.$on('refreshGrid', function () {
+    	$rootScope.$emit("CallRefreshGrid", {});
+    });
+
+    $scope.$on('albumSalvo', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro salvo com sucesso!' }
+        ];
+    });
+
+    $scope.$on('albumDeletado', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro deletado com sucesso!' }
+        ];
+    });
+
+    $scope.$on('error', function () {
+        $scope.alerts = [
+            { type: 'danger', msg: 'Ocorreu o erro não tratado!' }
+        ];
+    });
+
+    $scope.$on('albumApagada', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro apagado com sucesso!' }
+        ];
+    });
+
+    $scope.closeAlert = function (index) {
+        $scope.alerts.splice(index, 1);
+    };
+});
+
+app.factory('albumService', function ($resource) {
+    return $resource(Util.getContext() + 'rest/album/:id');
+});
+</script>
+
+</body>
+</html>

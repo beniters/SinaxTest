@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html ng-app="autorApp">
+<head>
+	<link rel="stylesheet" type="text/css" href="../css/style.css"/>
+	<script src="../js/angular.min.js"></script>
+	<script src="../js/angular-resource.min.js"></script>
+	<script src="../js/Util.js"></script>
+	<script src="../js/json2.js"></script>
+	<meta charset="UTF-8">
+</head>
+<body>
+
+<h1>.:: <b>Autor</b> ::..</h1>
+
+<br/>
+
+<div class="message" ng-controller="alertMessagesController">
+    <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+
+<div class="grid" ng-controller="autorListController"> 
+    <table>
+    	<tr>
+    		<td colspan="5"></td>
+    	</tr>
+    </table>
+	<table>
+		<tr>
+			<th>#</th>
+			<th>Autor</th>
+		</tr>
+		<tr ng-repeat="x in dados" class="line">
+			<td ng-click="select(x.idPessoa)" >{{ x.idPessoa }}</td>
+			<td ng-click="select(x.idPessoa)" >{{ x.nomePessoa }}</td>
+			<td><a ng-click="deleteAutor($event, x.idPessoa)" href="#"><img alt="Apagar" src="../img/ic_delete.png" width="10" height="10"/></a></td>
+		</tr>
+	</table>
+	
+</div>
+
+<div class="form" ng-controller="autorFormController">
+    <div ng-if="autor.idPessoa == null">
+        <h3><a ng-click="novoCadastro()" href="#">Novo Autor</a></h3>
+    </div>
+    <div ng-show="autor.idPessoa != null">
+        <h3>Atualizar Autor</h3>
+    </div>
+     <form name="autorForm" ng-submit="updateAutor()" ng-show="autor.idPessoa != null || novo" novalidate >
+
+         <div class="form-group" ng-class="{'has-error' : autorForm.nomePessoa.$invalid && autorForm.nomePessoa.$dirty}">
+             <label for="nomePessoa">Título:</label>
+             <span ng-class="{'glyphicon glyphicon-ok' : autorForm.nomePessoa.$valid && autorForm.nomePessoa.$dirty}"></span>
+
+             <input id="nomePessoa" name="nomePessoa" type="text" class="form-control" maxlength="50"
+                    ng-model="autor.nomePessoa"
+                    required ng-minlength="2" ng-maxlength="50"/>
+
+             <p class="help-block" ng-show="autorForm.nomePessoa.$error.required">O Nome da autor é obrigatório.</p>
+             <p class="help-block" ng-show="autorForm.nomePessoa.$error.minlength">O Nome da autor deve ter pelo menos 2 caracteres.</p>
+             <p class="help-block" ng-show="autorForm.nomePessoa.$error.maxlength">O Nome da autor não pode ultrapassar 50 caracteres.</p>
+         </div>
+
+         <div class="buttons">
+             <button type="button" class="btn btn-primary" ng-click="clearForm()">Limpar</button>
+             <button type="submit" class="btn btn-primary" ng-disabled="autorForm.$invalid">Salvar</button>
+         </div>
+     </form>
+</div>
+
+<script>
+var app = angular.module('autorApp', ['ngResource']);
+app.controller('autorListController', 
+	function($scope, $rootScope, $http) {
+		$scope.select = function (id) {
+			$rootScope.$broadcast('autorSelecionado', id);
+		};
+		$scope.refreshGrid = function(){
+			var callBackSuccess = function(response){$scope.dados = response.data;};
+			Util.get($http, 'rest/autor', null, callBackSuccess);
+		};
+		$rootScope.$on("CallRefreshGrid", function(){
+				$scope.refreshGrid();
+			}
+		);
+		$scope.refreshGrid();
+		
+
+		$scope.clearForm = function () {
+	        $scope.autor = null;
+//	         document.getElementById('imageUrl').value = null;
+	        $scope.autorForm.$setPristine();
+	        $rootScope.$broadcast('clear');
+	        $scope.novo = false;
+	    }
+	    
+	    $scope.deleteAutor = function(ev, id){
+	    	var r = confirm("Confirma a Exclusão?");
+	    	if (r == true) {
+	    		var _callBackSuccess = function (response) {
+		            $rootScope.$broadcast('refreshGrid');
+		            $rootScope.$broadcast('autorApagado');
+		            $scope.clearForm();
+		        };
+		
+		        var _callBackError = function () {
+		            $rootScope.$broadcast('error');
+		        };
+		   		if(id != null){
+		           	Util.del($http, 'rest/autor/delete/'+id, $scope.autor, _callBackSuccess, _callBackError);
+		       	}
+	    	} 
+			
+	    }
+	}
+);
+
+app.controller('autorFormController', function ($scope, $rootScope, $http, $resource) {
+	$scope.novo = false;
+
+	$scope.novoCadastro = function(){
+		$scope.novo = true;
+	};
+	
+	$scope.popComboAutor = function(){
+		var callBackSuccess = function(response){$scope.dadosComboAutor = response.data;};
+		Util.get($http, 'rest/autor', null, callBackSuccess);
+	};
+
+	$scope.popComboAutor();
+	
+    $scope.clearForm = function () {
+        $scope.autor = null;
+//         document.getElementById('imageUrl').value = null;
+        $scope.autorForm.$setPristine();
+        $rootScope.$broadcast('clear');
+        $scope.novo = false;
+    };
+
+    $scope.updateAutor = function () {
+     	var _callBackSuccess = function (response) {
+             $rootScope.$broadcast('refreshGrid');
+             $scope.autor = response.data;
+             $rootScope.$broadcast('autorSalvo');
+             $scope.clearForm();
+         };
+
+         var _callBackError = function () {
+             $rootScope.$broadcast('error');
+         };
+    	if($scope.autor.idPessoa != null){
+            Util.put($http, 'rest/autor', $scope.autor, _callBackSuccess, _callBackError);
+        } 
+    	else{
+    		Util.post($http, 'rest/autor', $scope.autor, _callBackSuccess, _callBackError);
+        }
+    };
+
+    $scope.$on('autorSelecionado', function (event, id) {
+    	Util.get($http, 'rest/autor/'+id, null, function(response){
+        											$scope.autor = response.data; 
+        										 });
+    });
+
+});
+
+app.controller('alertMessagesController', function ($rootScope, $scope, $http) {
+    $scope.$on('refreshGrid', function () {
+    	$rootScope.$emit("CallRefreshGrid", {});
+    });
+
+    $scope.$on('autorSalvo', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro salvo com sucesso!' }
+        ];
+    });
+
+    $scope.$on('autorDeletado', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro deletado com sucesso!' }
+        ];
+    });
+
+    $scope.$on('error', function () {
+        $scope.alerts = [
+            { type: 'danger', msg: 'Ocorreu o erro não tratado!' }
+        ];
+    });
+
+
+    $scope.$on('autorApagado', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro apagado com sucesso!' }
+        ];
+    });
+
+    $scope.closeAlert = function (index) {
+        $scope.alerts.splice(index, 1);
+    };
+});
+
+app.factory('autorService', function ($resource) {
+    return $resource(Util.getContext() + 'rest/autor/:id');
+});
+</script>
+
+</body>
+</html>

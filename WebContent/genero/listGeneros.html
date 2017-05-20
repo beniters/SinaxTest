@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html ng-app="generoApp">
+<head>
+	<link rel="stylesheet" type="text/css" href="../css/style.css"/>
+	<script src="../js/angular.min.js"></script>
+	<script src="../js/angular-resource.min.js"></script>
+	<script src="../js/Util.js"></script>
+	<script src="../js/json2.js"></script>
+	<meta charset="UTF-8">
+</head>
+<body>
+
+<h1>.:: <b>Genero</b> ::..</h1>
+
+<br/>
+
+<div class="message" ng-controller="alertMessagesController">
+    <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+
+<div class="grid" ng-controller="generoListController"> 
+    <table>
+    	<tr>
+    		<td colspan="5"></td>
+    	</tr>
+    </table>
+	<table>
+		<tr>
+			<th>#</th>
+			<th>Genero</th>
+		</tr>
+		<tr ng-repeat="x in dados" class="line">
+			<td ng-click="select(x.idGenero)" >{{ x.idGenero }}</td>
+			<td ng-click="select(x.idGenero)" >{{ x.nomeGenero }}</td>
+			<td><a ng-click="deleteGenero($event, x.idGenero)" href="#"><img alt="Apagar" src="../img/ic_delete.png" width="10" height="10"/></a></td>
+		</tr>
+	</table>
+	
+</div>
+
+<div class="form" ng-controller="generoFormController">
+    <div ng-if="genero.idGenero == null">
+        <h3><a ng-click="novoCadastro()" href="#">Novo Genero</a></h3>
+    </div>
+    <div ng-show="genero.idGenero != null">
+        <h3>Atualizar Genero</h3>
+    </div>
+     <form name="generoForm" ng-submit="updateGenero()" ng-show="genero.idGenero != null || novo" novalidate >
+
+         <div class="form-group" ng-class="{'has-error' : generoForm.nomeGenero.$invalid && generoForm.nomeGenero.$dirty}">
+             <label for="nomeGenero">Título:</label>
+             <span ng-class="{'glyphicon glyphicon-ok' : generoForm.nomeGenero.$valid && generoForm.nomeGenero.$dirty}"></span>
+
+             <input id="nomeGenero" name="nomeGenero" type="text" class="form-control" maxlength="50"
+                    ng-model="genero.nomeGenero"
+                    required ng-minlength="2" ng-maxlength="50"/>
+
+             <p class="help-block" ng-show="generoForm.nomeGenero.$error.required">O Título da genero é obrigatório.</p>
+             <p class="help-block" ng-show="generoForm.nomeGenero.$error.minlength">O Título da genero deve ter pelo menos 2 caracteres.</p>
+             <p class="help-block" ng-show="generoForm.nomeGenero.$error.maxlength">O Título da genero não pode ultrapassar 50 caracteres.</p>
+         </div>
+
+         <div class="buttons">
+             <button type="button" class="btn btn-primary" ng-click="clearForm()">Limpar</button>
+             <button type="submit" class="btn btn-primary" ng-disabled="generoForm.$invalid">Salvar</button>
+         </div>
+     </form>
+</div>
+
+<script>
+var app = angular.module('generoApp', ['ngResource']);
+app.controller('generoListController', 
+	function($scope, $rootScope, $http) {
+		$scope.select = function (id) {
+			$rootScope.$broadcast('generoSelecionado', id);
+		};
+		$scope.refreshGrid = function(){
+			var callBackSuccess = function(response){$scope.dados = response.data;};
+			Util.get($http, 'rest/genero', null, callBackSuccess);
+		};
+		$rootScope.$on("CallRefreshGrid", function(){
+				$scope.refreshGrid();
+			}
+		);
+		$scope.refreshGrid();
+		
+
+		$scope.clearForm = function () {
+	        $scope.genero = null;
+//	         document.getElementById('imageUrl').value = null;
+	        $scope.generoForm.$setPristine();
+	        $rootScope.$broadcast('clear');
+	        $scope.novo = false;
+	    }
+	    
+	    $scope.deleteGenero = function(ev, id){
+	    	var r = confirm("Confirma a Exclusão?");
+	    	if (r == true) {
+	    		var _callBackSuccess = function (response) {
+		            $rootScope.$broadcast('refreshGrid');
+		            $rootScope.$broadcast('generoApagada');
+		            $scope.clearForm();
+		        };
+		
+		        var _callBackError = function () {
+		            $rootScope.$broadcast('error');
+		        };
+		   		if(id != null){
+		           	Util.del($http, 'rest/genero/delete/'+id, $scope.genero, _callBackSuccess, _callBackError);
+		       	}
+	    	} 
+			
+	    }
+	}
+);
+
+app.controller('generoFormController', function ($scope, $rootScope, $http, $resource) {
+	$scope.novo = false;
+
+	$scope.novoCadastro = function(){
+		$scope.novo = true;
+	};
+	
+	$scope.popComboGenero = function(){
+		var callBackSuccess = function(response){$scope.dadosComboGenero = response.data;};
+		Util.get($http, 'rest/genero', null, callBackSuccess);
+	};
+
+	$scope.popComboGenero();
+	
+    $scope.clearForm = function () {
+        $scope.genero = null;
+//         document.getElementById('imageUrl').value = null;
+        $scope.generoForm.$setPristine();
+        $rootScope.$broadcast('clear');
+        $scope.novo = false;
+    };
+
+    $scope.updateGenero = function () {
+     	var _callBackSuccess = function (response) {
+             $rootScope.$broadcast('refreshGrid');
+             $scope.genero = response.data;
+             $rootScope.$broadcast('generoSalvo');
+             $scope.clearForm();
+         };
+
+         var _callBackError = function () {
+             $rootScope.$broadcast('error');
+         };
+    	if($scope.genero.idGenero != null){
+            Util.put($http, 'rest/genero', $scope.genero, _callBackSuccess, _callBackError);
+        } 
+    	else{
+    		Util.post($http, 'rest/genero', $scope.genero, _callBackSuccess, _callBackError);
+        }
+    };
+
+    $scope.$on('generoSelecionado', function (event, id) {
+    	Util.get($http, 'rest/genero/'+id, null, function(response){
+        											$scope.genero = response.data; 
+        										 });
+    });
+
+    $scope.$on('deleteGenero', function (event, id) {
+    	generoService.delete({id: id}).$promise.then(
+            function () {
+                $rootScope.$broadcast('refreshGrid');
+                $rootScope.$broadcast('generoDeletado');
+                $scope.clearForm();
+            },
+            function () {
+                $rootScope.$broadcast('error');
+            });
+    });
+});
+
+app.controller('alertMessagesController', function ($rootScope, $scope, $http) {
+    $scope.$on('refreshGrid', function () {
+    	$rootScope.$emit("CallRefreshGrid", {});
+    });
+
+    $scope.$on('generoSalvo', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro salvo com sucesso!' }
+        ];
+    });
+
+    $scope.$on('generoDeletado', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro deletado com sucesso!' }
+        ];
+    });
+
+    $scope.$on('error', function () {
+        $scope.alerts = [
+            { type: 'danger', msg: 'Ocorreu o erro não tratado!' }
+        ];
+    });
+
+
+    $scope.$on('generoApagada', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro apagado com sucesso!' }
+        ];
+    });
+
+    $scope.closeAlert = function (index) {
+        $scope.alerts.splice(index, 1);
+    };
+});
+
+app.factory('generoService', function ($resource) {
+    return $resource(Util.getContext() + 'rest/genero/:id');
+});
+</script>
+
+</body>
+</html>

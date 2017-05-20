@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html ng-app="musicaApp">
+<head>
+	<link rel="stylesheet" type="text/css" href="../css/style.css"/>
+	<script src="../js/angular.min.js"></script>
+	<script src="../js/angular-resource.min.js"></script>
+	<script src="../js/Util.js"></script>
+	<script src="../js/json2.js"></script>
+</head>
+<body>
+
+<h1>.:: <b>Música</b> ::..</h1>
+
+<br/>
+
+<div class="message" ng-controller="alertMessagesController">
+    <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+
+<div class="grid" ng-controller="musicaListController"> 
+    <table>
+    	<tr>
+    		<td colspan="5"></td>
+    	</tr>
+    </table>
+	<table>
+		<tr>
+			<th>#</th>
+			<th># Faixa</th>
+			<th>Música</th>
+			<th>Duração</th>
+			<th>Genero</th>
+		</tr>
+		<tr ng-repeat="x in dados" class="line">
+			<td ng-click="select(x.idMusica)">{{ x.idMusica }}</td>
+			<td ng-click="select(x.idMusica)">{{ x.faixaMusica }}</td>
+			<td ng-click="select(x.idMusica)">{{ x.nomeMusica }}</td>
+			<td ng-click="select(x.idMusica)">{{ x.duracaoMusica }}</td>
+			<td ng-click="select(x.idMusica)">{{ x.genero.nomeGenero }}</td>
+			<td><a ng-click="deleteMusica($event, x.idMusica)" href="#"><img alt="Apagar" src="../img/ic_delete.png" width="10" height="10"/></a></td>
+		</tr>
+	</table>
+	
+</div>
+
+<div class="form" ng-controller="musicaFormController">
+    <div ng-if="musica.idMusica == null">
+        <h3><a ng-click="novoCadastro()" href="#">Nova Música</a></h3>
+    </div>
+    <div ng-show="musica.idMusica != null">
+        <h3>Atualizar Música</h3>
+    </div>
+     <form name="musicaForm" ng-submit="updateMusica()" ng-show="musica.idMusica != null || novo" novalidate >
+
+         <div class="form-group" ng-class="{'has-error' : musicaForm.nomeMusica.$invalid && musicaForm.nomeMusica.$dirty}">
+             <label for="nomeMusica">Título:</label>
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.nomeMusica.$valid && musicaForm.nomeMusica.$dirty}"></span>
+
+             <input id="nomeMusica" name="nomeMusica" type="text" class="form-control" maxlength="50"
+                    ng-model="musica.nomeMusica"
+                    required ng-minlength="2" ng-maxlength="50"/>
+
+             <p class="help-block" ng-show="musicaForm.nomeMusica.$error.required">O Título da música é obrigatório.</p>
+             <p class="help-block" ng-show="musicaForm.nomeMusica.$error.minlength">O Título da música deve ter pelo menos 2 caracteres.</p>
+             <p class="help-block" ng-show="musicaForm.nomeMusica.$error.maxlength">O Título da música não pode ultrapassar 50 caracteres.</p>
+         </div>
+         <br/>
+         <div class="form-group" ng-class="{'has-error' : musicaForm.faixaMusica.$invalid && musicaForm.faixaMusica.$dirty}">
+             <label for="faixaMusica">Faixa:</label>
+             <!-- Display a check when the field is valid and was modified -->
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.faixaMusica.$valid && musicaForm.faixaMusica.$dirty}"></span>
+
+             <input id="faixaMusica" name="faixaMusica" type="text" class="form-control" maxlength="2"
+                    ng-model="musica.faixaMusica"
+                    required ng-maxlength="2"/>
+
+             <p class="help-block" ng-show="musicaForm.faixaMusica.$error.required">O Número da faixa da música é obrigatório.</p>
+             <p class="help-block" ng-show="musicaForm.faixaMusica.$error.maxlength">O Número da faixa da música não pode ultrapassar 2 números.</p>
+         </div>
+         
+         <br/>
+
+         <div class="form-group" ng-class="{'has-error' : musicaForm.duracaoMusica.$invalid && musicaForm.duracaoMusica.$dirty}">
+             <label for="duracaoMusica">Duração:</label>
+             <!-- Display a check when the field is valid and was modified -->
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.duracaoMusica.$valid && musicaForm.duracaoMusica.$dirty}"></span>
+
+             <input id="duracaoMusica" name="duracaoMusica" type="text" class="form-control" maxlength="5"
+                    ng-model="musica.duracaoMusica"
+                    required ng-maxlength="5"/>
+
+             <p class="help-block" ng-show="musicaForm.duracaoMusica.$error.required">A Duração da música é obrigatória.</p>
+             <p class="help-block" ng-show="musicaForm.duracaoMusica.$error.maxlength">A Duração da música não pode ultrapassar 5 caracteres.</p>
+         </div>
+		
+		 <br/>
+		
+         <div class="form-group" ng-class="{'has-error' : musicaForm.genero.$invalid && musicaForm.genero.$dirty}">
+             <label for="genero">Genero Músical:</label>
+             <!-- Display a check when the field is valid and was modified -->
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.genero.$valid && musicaForm.genero.$dirty}"></span>
+			 <select name="genero" id="genero" 
+					ng-model="musica.genero" 
+					ng-options="opt.nomeGenero for opt in dadosComboGenero"></select>
+					
+             <p class="help-block" ng-show="musicaForm.genero.$error.required">O Genero da música é obrigatório.</p>
+         </div>
+		
+		 <br/>
+		
+         <div class="form-group" ng-class="{'has-error' : musicaForm.albuns.$invalid && musicaForm.albuns.$dirty}">
+             <label for="albuns">Album(ns):</label>
+             <!-- Display a check when the field is valid and was modified -->
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.albuns.$valid && musicaForm.albuns.$dirty}"></span>
+			 <select name="albuns" id="albuns" 
+					ng-model="musica.albuns" 
+					ng-options="opt.nomeAlbum for opt in dadosComboAlbuns"
+					multiple="multiple"></select>
+					
+             <p class="help-block" ng-show="musicaForm.albuns.$error.required">O Genero da música é obrigatório.</p>
+         </div>
+		
+		 <br/>
+
+<!--          <div class="form-group" ng-class="{'has-error' : musicaForm.imageUrl.$invalid && musicaForm.imageUrl.$dirty}">
+             <label for="imageUrl">Image URL:</label>
+             Display a check when the field is valid and was modified
+             <span ng-class="{'glyphicon glyphicon-ok' : musicaForm.imageUrl.$valid && musicaForm.imageUrl.$dirty}"></span>
+
+             <input id="imageUrl" name="imageUrl" type="url" class="form-control" maxlength="500"
+                    ng-model="musica.imageUrl"
+                    required/>
+
+             Validation messages to be displayed on required and invalid. Type 'url' makes checks to a proper url format.
+             <p class="help-block" ng-show="musicaForm.imageUrl.$error.required">Add Image URL.</p>
+             <p class="help-block" ng-show="musicaForm.imageUrl.$invalid && musicaForm.imageUrl.$dirty">Invalid Image URL.</p>
+         </div> -->
+
+         <!-- <div class="avatar" ng-if="musica.imageUrl">
+             <img ng-src="{{musica.imageUrl}}" width="400" height="250"/>
+         </div> -->
+
+         <div class="buttons">
+             <button type="button" class="btn btn-primary" ng-click="clearForm()">Limpar</button>
+             <button type="submit" class="btn btn-primary" ng-disabled="musicaForm.$invalid">Salvar</button>
+         </div>
+     </form>
+</div>
+
+<script>
+var app = angular.module('musicaApp', ['ngResource']);
+app.controller('musicaListController', 
+	function($scope, $rootScope, $http) {
+		$scope.select = function (id) {
+			$rootScope.$broadcast('musicaSelecionada', id);
+		};
+		$scope.refreshGrid = function(){
+			var callBackSuccess = function(response){$scope.dados = response.data;};
+			Util.get($http, 'rest/musica', null, callBackSuccess);
+		};
+		$rootScope.$on("CallRefreshGrid", function(){
+				$scope.refreshGrid();
+			}
+		);
+		$scope.refreshGrid();
+
+		$scope.clearForm = function () {
+	        $scope.musica = null;
+//	         document.getElementById('imageUrl').value = null;
+	        $scope.musicaForm.$setPristine();
+	        $rootScope.$broadcast('clear');
+	        $scope.novo = false;
+	    }
+	    
+	    $scope.deleteMusica = function(ev, id){
+	    	Util.get($http, 'rest/musica/'+id, null, function(response){
+				$scope.musica = response.data; 
+				var r = confirm("Confirma a Exclusão?");
+		    	if (r == true) {
+		    		var _callBackSuccess = function (response) {
+			            $rootScope.$broadcast('refreshGrid');
+			            $scope.musica = response.data;
+			            $rootScope.$broadcast('musicaApagada');
+			            $scope.clearForm();
+			        };
+			
+			        var _callBackError = function () {
+			            $rootScope.$broadcast('error');
+			        };
+			   		if($scope.musica.idMusica != null){
+			           	Util.del($http, 'rest/musica/deleteByEntity', $scope.musica, _callBackSuccess, _callBackError);
+			       	}
+		    	} 
+			});
+			
+	    }
+
+	}
+);
+
+app.controller('musicaFormController', function ($scope, $rootScope, $http, $resource/* , $mdDialog */) {
+	$scope.novo = false;
+
+	$scope.novoCadastro = function(){
+		$scope.novo = true;
+	};
+	
+	$scope.popComboGenero = function(){
+		var callBackSuccess = function(response){$scope.dadosComboGenero = response.data;};
+		Util.get($http, 'rest/genero', null, callBackSuccess);
+	};
+
+	$scope.popComboGenero();
+	
+	$scope.popComboAlbuns = function(){
+		var callBackSuccess = function(response){$scope.dadosComboAlbuns = response.data;};
+		Util.get($http, 'rest/album', null, callBackSuccess);
+	};
+
+	$scope.popComboAlbuns();
+	
+    $scope.clearForm = function () {
+        $scope.musica = null;
+//         document.getElementById('imageUrl').value = null;
+        $scope.musicaForm.$setPristine();
+        $rootScope.$broadcast('clear');
+        $scope.novo = false;
+    };
+
+    $scope.updateMusica = function () {
+     	var _callBackSuccess = function (response) {
+             $rootScope.$broadcast('refreshGrid');
+             $scope.musica = response.data;
+             $rootScope.$broadcast('musicaSalva');
+             $scope.clearForm();
+         };
+
+         var _callBackError = function () {
+             $rootScope.$broadcast('error');
+         };
+    	if($scope.musica.idMusica != null){
+            Util.put($http, 'rest/musica', $scope.musica, _callBackSuccess, _callBackError);
+        } 
+    	else{
+    		$scope.musica.genero = JSON.parse($scope.musica.genero);
+    		Util.post($http, 'rest/musica', $scope.musica, _callBackSuccess, _callBackError);
+        }
+    };
+
+    $scope.$on('musicaSelecionada', function (event, id) {
+    	Util.get($http, 'rest/musica/'+id, null, function(response){
+        											$scope.musica = response.data; 
+        											var selected;
+        											for(x in $scope.dadosComboGenero){
+            											if($scope.dadosComboGenero[x].idGenero == $scope.musica.genero.idGenero){
+            												$scope.musica.genero = $scope.dadosComboGenero[x];
+                										}
+            										}
+        										 });
+    });
+
+});
+
+app.controller('alertMessagesController', function ($rootScope, $scope, $http) {
+    $scope.$on('refreshGrid', function () {
+    	$rootScope.$emit("CallRefreshGrid", {});
+    });
+
+    $scope.$on('musicaSalva', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro salvo com sucesso!' }
+        ];
+    });
+    
+    $scope.$on('musicaApagada', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro apagado com sucesso!' }
+        ];
+    });
+
+    $scope.$on('musicaDeletada', function () {
+        $scope.alerts = [
+            { type: 'success', msg: 'Registro deletado com sucesso!' }
+        ];
+    });
+
+    $scope.$on('error', function () {
+        $scope.alerts = [
+            { type: 'danger', msg: 'Ocorreu o erro não tratado!' }
+        ];
+    });
+
+    $scope.closeAlert = function (index) {
+        $scope.alerts.splice(index, 1);
+    };
+});
+
+app.factory('musicaService', function ($resource) {
+    return $resource(Util.getContext() + 'rest/musica/:id');
+});
+</script>
+
+</body>
+</html>
