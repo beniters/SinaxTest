@@ -8,6 +8,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -24,7 +26,9 @@ public class AlbumEntity{
 	@Column(name="TB0004_NOME_ALBUM")
 	private String nomeAlbum;
 	
-	@ManyToMany (mappedBy = "albuns", fetch = FetchType.LAZY)
+	
+	@ManyToMany(fetch=FetchType.EAGER)
+    @JoinTable(name="TB0005_MUSICA_ALBUM", joinColumns={@JoinColumn(name="TB0001_ID_MUSICA")}, inverseJoinColumns={@JoinColumn(name="TB0004_ID_ALBUM")})
 	private List<MusicaEntity> musicas;
 
 	public int getIdAlbum() {

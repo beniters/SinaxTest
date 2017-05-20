@@ -9,7 +9,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -37,8 +36,7 @@ public class MusicaEntity{
 	@JoinColumn(name="TB0002_ID_GENERO")
 	private GeneroEntity genero; 
 
-	@ManyToMany(fetch=FetchType.EAGER)
-    @JoinTable(name="TB0005_MUSICA_ALBUM", joinColumns={@JoinColumn(name="TB0004_ID_ALBUM")}, inverseJoinColumns={@JoinColumn(name="TB0001_ID_MUSICA")})
+	@ManyToMany (mappedBy = "musicas", fetch = FetchType.LAZY)
 	private List<AlbumEntity> albuns; 
 	
 	@ManyToMany (mappedBy = "musicas")

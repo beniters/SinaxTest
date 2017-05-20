@@ -58,7 +58,7 @@ public class MusicaService extends GeneralResouceImpl<MusicaEntity> {
 		return super.update(entity);
 	}
 */	
-
+/*
 	@DELETE @Path("/deleteByEntity") 
 	public void deleteByEntity(MusicaEntity entity) {
 		GenericDAO<MusicaEntity> daoMusicaAlbum = GenericDAO.getInstance(MusicaEntity.class);
@@ -75,5 +75,5 @@ public class MusicaService extends GeneralResouceImpl<MusicaEntity> {
 		daoMusicaAlbum.em.getTransaction().commit();
 		super.delete(entity.getIdMusica());
 	}
-
+*/	
 }
