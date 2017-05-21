@@ -36,10 +36,10 @@ public class MusicaEntity{
 	@JoinColumn(name="TB0002_ID_GENERO")
 	private GeneroEntity genero; 
 
-	@ManyToMany (mappedBy = "musicas", fetch = FetchType.LAZY)
+	@ManyToMany (mappedBy = "musicas", fetch = FetchType.EAGER)
 	private List<AlbumEntity> albuns; 
 	
-	@ManyToMany (mappedBy = "musicas")
+	@ManyToMany (mappedBy = "musicas", fetch = FetchType.EAGER)
 	private List<PessoaEntity> autores;
 	
 	public int getIdMusica() {

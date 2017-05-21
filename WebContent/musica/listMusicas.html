@@ -117,7 +117,7 @@
 					ng-options="opt.nomeAlbum for opt in dadosComboAlbuns"
 					multiple="multiple"></select>
 					
-             <p class="help-block" ng-show="musicaForm.albuns.$error.required">O Genero da música é obrigatório.</p>
+             <p class="help-block" ng-show="musicaForm.albuns.$error.required">O Album da música é obrigatório.</p>
          </div>
 		
 		 <br/>
@@ -155,7 +155,7 @@ app.controller('musicaListController',
 			$rootScope.$broadcast('musicaSelecionada', id);
 		};
 		$scope.refreshGrid = function(){
-			var callBackSuccess = function(response){$scope.dados = response.data;};
+			var callBackSuccess = function(response){$scope.dados = response.data; console.log(response.data);};
 			Util.get($http, 'rest/musica', null, callBackSuccess);
 		};
 		$rootScope.$on("CallRefreshGrid", function(){
@@ -242,7 +242,9 @@ app.controller('musicaFormController', function ($scope, $rootScope, $http, $res
             Util.put($http, 'rest/musica', $scope.musica, _callBackSuccess, _callBackError);
         } 
     	else{
-    		$scope.musica.genero = JSON.parse($scope.musica.genero);
+//         	console.log($scope.musica.genero);
+//     		$scope.musica.genero = JSON.parse($scope.musica.genero);
+			console.log($scope.musica);
     		Util.post($http, 'rest/musica', $scope.musica, _callBackSuccess, _callBackError);
         }
     };

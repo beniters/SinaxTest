@@ -7,10 +7,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import br.com.sinax.test.model.dao.generic.GenericDAO;
-import br.com.sinax.test.model.jpa.AlbumEntity;
+import br.com.sinax.test.model.dao.MusicaDAO;
 import br.com.sinax.test.model.jpa.MusicaEntity;
-import br.com.sinax.test.model.jpa.PessoaEntity;
 import br.com.sinax.test.resources.general.impl.GeneralResouceImpl;
 
 @Path("/musica")
@@ -58,22 +56,9 @@ public class MusicaService extends GeneralResouceImpl<MusicaEntity> {
 		return super.update(entity);
 	}
 */	
-/*
 	@DELETE @Path("/deleteByEntity") 
 	public void deleteByEntity(MusicaEntity entity) {
-		GenericDAO<MusicaEntity> daoMusicaAlbum = GenericDAO.getInstance(MusicaEntity.class);
-		daoMusicaAlbum.em.getTransaction().begin();
-		for (AlbumEntity album : entity.getAlbuns()) {
-			
-		}
-		for (PessoaEntity autor : entity.getAutores()) {
-			
-		}
-		for (PessoaEntity genero : entity.getAutores()) {
-			
-		}
-		daoMusicaAlbum.em.getTransaction().commit();
-		super.delete(entity.getIdMusica());
+		MusicaDAO<MusicaEntity> daoMusica = new MusicaDAO<MusicaEntity>(MusicaEntity.class);
+		daoMusica.delete(entity);
 	}
-*/	
 }
